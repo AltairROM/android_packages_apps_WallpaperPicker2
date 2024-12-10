@@ -25,4 +25,6 @@ import kotlinx.coroutines.flow.Flow
  */
 interface CategoryInteractor {
     val categories: Flow<List<CategoryModel>>
+
+    fun refreshNetworkCategories()
 }

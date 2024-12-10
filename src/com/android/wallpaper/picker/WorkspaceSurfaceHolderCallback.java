@@ -21,11 +21,13 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceControlViewHost;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.Nullable;
 
+import com.android.wallpaper.picker.common.preview.ui.binder.DefaultWorkspaceCallbackBinder;
 import com.android.wallpaper.util.PreviewUtils;
 import com.android.wallpaper.util.SurfaceViewUtils;
 
@@ -46,8 +48,6 @@ public class WorkspaceSurfaceHolderCallback implements SurfaceHolder.Callback {
 
     private static final String TAG = "WsSurfaceHolderCallback";
     private static final String KEY_WALLPAPER_COLORS = "wallpaper_colors";
-    public static final int MESSAGE_ID_UPDATE_PREVIEW = 1337;
-    public static final String KEY_HIDE_BOTTOM_ROW = "hide_bottom_row";
     public static final int MESSAGE_ID_COLOR_OVERRIDE = 1234;
     public static final String KEY_COLOR_OVERRIDE = "color_override"; // ColorInt Encoded as string
     private final SurfaceView mWorkspaceSurface;
@@ -161,9 +161,16 @@ public class WorkspaceSurfaceHolderCallback implements SurfaceHolder.Callback {
         requestPreview(mWorkspaceSurface, (result) -> {
             mRequestPending.set(false);
             if (result != null && mLastSurface != null) {
-                mWorkspaceSurface.setChildSurfacePackage(
-                        SurfaceViewUtils.getSurfacePackage(result));
-                mCallback = SurfaceViewUtils.getCallback(result);
+                final SurfaceControlViewHost.SurfacePackage pkg =
+                        SurfaceViewUtils.INSTANCE.getSurfacePackage(result);
+                if (pkg != null) {
+                    mWorkspaceSurface.setChildSurfacePackage(pkg);
+                } else {
+                    Log.w(TAG,
+                            "Result bundle from rendering preview does not contain a child "
+                                    + "surface package.");
+                }
+                mCallback = SurfaceViewUtils.INSTANCE.getCallback(result);
                 if (mCallback != null && mDelayedMessage != null) {
                     try {
                         mCallback.replyTo.send(mDelayedMessage);
@@ -246,11 +253,12 @@ public class WorkspaceSurfaceHolderCallback implements SurfaceHolder.Callback {
                             + "crash");
             return;
         }
-        Bundle request = SurfaceViewUtils.createSurfaceViewRequest(workspaceSurface, mExtras);
+        Bundle request = SurfaceViewUtils.INSTANCE.createSurfaceViewRequest(workspaceSurface,
+                mExtras);
         if (mWallpaperColors != null) {
             request.putParcelable(KEY_WALLPAPER_COLORS, mWallpaperColors);
         }
-        request.putBoolean(KEY_HIDE_BOTTOM_ROW, mHideBottomRow);
+        request.putBoolean(DefaultWorkspaceCallbackBinder.KEY_HIDE_BOTTOM_ROW, mHideBottomRow);
         mPreviewUtils.renderPreview(request, callback);
     }
 }

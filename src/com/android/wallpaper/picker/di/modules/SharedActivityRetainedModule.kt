@@ -16,18 +16,63 @@
 
 package com.android.wallpaper.picker.di.modules
 
+import android.content.Context
+import com.android.wallpaper.R
 import com.android.wallpaper.picker.preview.data.repository.ImageEffectsRepository
 import com.android.wallpaper.picker.preview.data.repository.ImageEffectsRepositoryImpl
+import com.android.wallpaper.util.PreviewUtils
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.scopes.ActivityRetainedScoped
+import javax.inject.Qualifier
+
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class LockScreenPreviewUtils
+
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class HomeScreenPreviewUtils
 
 @Module
 @InstallIn(ActivityRetainedComponent::class)
 abstract class SharedActivityRetainedModule {
+
     @Binds
     abstract fun bindImageEffectsRepository(
         impl: ImageEffectsRepositoryImpl
     ): ImageEffectsRepository
+
+    companion object {
+
+        @HomeScreenPreviewUtils
+        @ActivityRetainedScoped
+        @Provides
+        fun provideHomeScreenPreviewUtils(
+            @ApplicationContext appContext: Context,
+        ): PreviewUtils {
+            return PreviewUtils(
+                context = appContext,
+                authorityMetadataKey =
+                    appContext.getString(
+                        R.string.grid_control_metadata_name,
+                    ),
+            )
+        }
+
+        @LockScreenPreviewUtils
+        @ActivityRetainedScoped
+        @Provides
+        fun provideLockScreenPreviewUtils(
+            @ApplicationContext appContext: Context,
+        ): PreviewUtils {
+            return PreviewUtils(
+                context = appContext,
+                authority =
+                    appContext.getString(
+                        R.string.lock_screen_preview_provider_authority,
+                    ),
+            )
+        }
+    }
 }

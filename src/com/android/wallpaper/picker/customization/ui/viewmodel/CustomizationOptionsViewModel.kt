@@ -17,15 +17,21 @@
 package com.android.wallpaper.picker.customization.ui.viewmodel
 
 import com.android.wallpaper.picker.customization.ui.util.CustomizationOptionUtil
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 
 interface CustomizationOptionsViewModel {
 
-    val selectedOption: Flow<CustomizationOptionUtil.CustomizationOption?>
+    val selectedOption: StateFlow<CustomizationOptionUtil.CustomizationOption?>
 
     /**
      * Deselect the selected option and return true. If no option is selected, do nothing and return
      * false.
      */
     fun deselectOption(): Boolean
+}
+
+interface CustomizationOptionsViewModelFactory {
+
+    fun create(viewModelScope: CoroutineScope): CustomizationOptionsViewModel
 }

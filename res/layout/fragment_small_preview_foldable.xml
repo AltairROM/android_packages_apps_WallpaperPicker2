@@ -71,7 +71,7 @@
         android:clipToPadding="false">
 
         <com.android.wallpaper.picker.preview.ui.view.DualPreviewViewPager
-            android:id="@+id/dual_preview_pager"
+            android:id="@+id/pager_previews"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="bottom"

@@ -18,6 +18,7 @@ package com.android.wallpaper.picker.customization.ui.util
 
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import com.android.wallpaper.model.Screen
@@ -34,13 +35,13 @@ interface CustomizationOptionUtil {
         layoutInflater: LayoutInflater,
     ): List<Pair<CustomizationOption, View>>
 
-    fun initBottomSheetContent(bottomSheetContainer: FrameLayout, layoutInflater: LayoutInflater)
+    fun initFloatingSheet(
+        bottomSheetContainer: FrameLayout,
+        layoutInflater: LayoutInflater,
+    ): Map<CustomizationOption, View>
 
-    fun getBottomSheetContent(option: CustomizationOption): View?
-
-    /**
-     * This function should be called when on destroy. The implementation should release any view
-     * references.
-     */
-    fun onDestroy()
+    fun createClockPreviewAndAddToParent(
+        parentView: ViewGroup,
+        layoutInflater: LayoutInflater,
+    ): View?
 }

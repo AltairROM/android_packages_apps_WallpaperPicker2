@@ -30,7 +30,10 @@ import com.android.wallpaper.picker.customization.shared.model.WallpaperDestinat
 import com.android.wallpaper.picker.customization.shared.model.WallpaperModel
 import com.android.wallpaper.picker.data.WallpaperModel.LiveWallpaperModel
 import com.android.wallpaper.picker.data.WallpaperModel.StaticWallpaperModel
+import com.android.wallpaper.picker.di.modules.BackgroundDispatcher
 import com.android.wallpaper.picker.preview.shared.model.FullPreviewCropModel
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -38,21 +41,32 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /** Encapsulates access to wallpaper-related data. */
-class WallpaperRepository(
-    private val scope: CoroutineScope,
+@Singleton
+class WallpaperRepository
+@Inject
+constructor(
+    @BackgroundDispatcher private val scope: CoroutineScope,
     private val client: WallpaperClient,
     private val wallpaperPreferences: WallpaperPreferences,
-    private val backgroundDispatcher: CoroutineDispatcher,
+    @BackgroundDispatcher private val backgroundDispatcher: CoroutineDispatcher,
 ) {
     val maxOptions = MAX_OPTIONS
 
     private val thumbnailCache = LruCache<String, Bitmap>(maxOptions)
+
+    // TODO (b/348462236): figure out if current wallpaper model can change in lifecycle & update
+    val currentWallpaperModels =
+        flow { emit(client.getCurrentWallpaperModels()) }
+            .flowOn(backgroundDispatcher)
+            .shareIn(scope = scope, started = SharingStarted.WhileSubscribed(), replay = 1)
 
     /** The ID of the currently-selected wallpaper. */
     fun selectedWallpaperId(

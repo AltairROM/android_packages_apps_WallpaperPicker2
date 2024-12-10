@@ -79,6 +79,15 @@
         android:exported="true">
     </activity>
 
+    <activity android:name="com.android.wallpaper.picker.customization.ui.CustomizationPickerActivity2"
+        android:label="@string/app_name"
+        android:relinquishTaskIdentity="true"
+        android:resizeableActivity="false"
+        android:theme="@style/WallpaperTheme.NoBackground"
+        android:configChanges="assetsPaths"
+        android:exported="true">
+    </activity>
+
     <activity android:name="com.android.wallpaper.picker.PassThroughCustomizationPickerActivity"
         android:label="@string/app_name"
         android:resizeableActivity="false"
@@ -138,7 +147,8 @@
           android:name="com.android.wallpaper.picker.preview.ui.WallpaperPreviewActivity"
           android:excludeFromRecents="true"
           android:taskAffinity="@string/multi_crop_task_affinity"
-          android:resizeableActivity="false"
+          android:resizeableActivity="true"
+          android:screenOrientation="locked"
           android:theme="@style/WallpaperTheme.Preview">
       </activity>
 

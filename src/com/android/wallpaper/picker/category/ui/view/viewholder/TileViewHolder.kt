@@ -21,12 +21,13 @@ import android.graphics.Point
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.android.wallpaper.R
+import com.android.wallpaper.picker.category.ui.view.SectionCardinality
 import com.android.wallpaper.picker.category.ui.viewmodel.TileViewModel
 import com.android.wallpaper.util.ResourceUtils
 import com.android.wallpaper.util.SizeCalculator
-import com.bumptech.glide.Glide
 
 /** Caches and binds [TileViewHolder] to a [WallpaperTileView] */
 class TileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -34,11 +35,13 @@ class TileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private var title: TextView
     private var categorySubtitle: TextView
     private var wallpaperCategoryImage: ImageView
+    private var categoryCardView: CardView
 
     init {
         title = itemView.requireViewById(R.id.tile_title)
         categorySubtitle = itemView.requireViewById(R.id.category_title)
         wallpaperCategoryImage = itemView.requireViewById(R.id.image)
+        categoryCardView = itemView.requireViewById(R.id.category)
     }
 
     fun bind(
@@ -48,34 +51,46 @@ class TileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         tileCount: Int,
         windowWidth: Int
     ) {
-        // TODO: the tiles binding has a lot more logic which will be handled in a dedicated binder
-        // TODO: size the tiles appropriately
         title.visibility = View.GONE
 
         var tileSize: Point
+        var tileRadius: Int
         // calculate the height
         if (columnCount == 1 && tileCount == 1) {
+            // sections that take 1 column and have 1 tile
             tileSize = SizeCalculator.getCategoryTileSize(itemView.context, windowWidth)
-        } else if (columnCount > 1 && tileCount == 1) {
+            tileRadius = context.resources.getDimension(R.dimen.grid_item_all_radius_small).toInt()
+        } else if (
+            columnCount > 1 &&
+                tileCount == 1 &&
+                item.maxCategoriesInRow == SectionCardinality.Single
+        ) {
+            // sections with more than 1 column and 1 tile
             tileSize = SizeCalculator.getFeaturedCategoryTileSize(itemView.context, windowWidth)
+            tileRadius = tileSize.y
         } else {
+            // sections witch take more than 1 column and have more than 1 tile
             tileSize = SizeCalculator.getFeaturedCategoryTileSize(itemView.context, windowWidth)
             tileSize.y /= 2
+            tileRadius = context.resources.getDimension(R.dimen.grid_item_all_radius).toInt()
         }
-        wallpaperCategoryImage.getLayoutParams().height = tileSize.y
 
-        if (item.thumbAsset == null) {
+        wallpaperCategoryImage.getLayoutParams().height = tileSize.y
+        categoryCardView.radius = tileRadius.toFloat()
+
+        if (item.thumbnailAsset != null) {
             val placeHolderColor =
                 ResourceUtils.getColorAttr(context, android.R.attr.colorSecondary)
-            item.thumbAsset?.loadDrawable(context, wallpaperCategoryImage, placeHolderColor)
+            item.thumbnailAsset.loadDrawable(context, wallpaperCategoryImage, placeHolderColor)
         } else {
-            // defaulting to solid color if assets are null
+            wallpaperCategoryImage.setImageDrawable(item.defaultDrawable)
             wallpaperCategoryImage.setBackgroundColor(
-                itemView.context.getResources().getColor(R.color.myphoto_background_color)
+                context.resources.getColor(R.color.myphoto_background_color)
             )
-            val nullObj: Any? = null
-            Glide.with(itemView.context).asDrawable().load(nullObj).into(wallpaperCategoryImage)
         }
         categorySubtitle.text = item.text
+
+        // bind the tile action to the button
+        itemView.setOnClickListener { _ -> item.onClicked?.invoke() }
     }
 }

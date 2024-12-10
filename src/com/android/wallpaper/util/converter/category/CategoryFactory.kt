@@ -16,11 +16,10 @@
 
 package com.android.wallpaper.util.converter.category
 
-import android.content.Context
 import com.android.wallpaper.model.Category
 import com.android.wallpaper.picker.data.category.CategoryModel
 
 /** This is the interface for converting legacy category to the new category model class. */
 interface CategoryFactory {
-    fun getCategoryModel(context: Context, category: Category): CategoryModel
+    fun getCategoryModel(category: Category): CategoryModel
 }

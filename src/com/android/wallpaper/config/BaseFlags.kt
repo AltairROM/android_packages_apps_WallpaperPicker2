@@ -19,11 +19,12 @@ import android.app.WallpaperManager
 import android.content.Context
 import com.android.settings.accessibility.Flags.enableColorContrastControl
 import com.android.systemui.Flags.clockReactiveVariants
+import com.android.systemui.shared.Flags.newCustomizationPickerUi
 import com.android.systemui.shared.customization.data.content.CustomizationProviderClient
 import com.android.systemui.shared.customization.data.content.CustomizationProviderClientImpl
 import com.android.systemui.shared.customization.data.content.CustomizationProviderContract as Contract
+import com.android.wallpaper.Flags.largeScreenWallpaperCollections
 import com.android.wallpaper.Flags.magicPortraitFlag
-import com.android.wallpaper.Flags.newPickerUiFlag
 import com.android.wallpaper.Flags.refactorWallpaperCategoryFlag
 import com.android.wallpaper.Flags.wallpaperRestorerFlag
 import com.android.wallpaper.module.InjectorProvider
@@ -33,15 +34,27 @@ import kotlinx.coroutines.runBlocking
 abstract class BaseFlags {
     private var customizationProviderClient: CustomizationProviderClient? = null
     private var cachedFlags: List<CustomizationProviderClient.Flag>? = null
+
     open fun isStagingBackdropContentEnabled() = false
+
     open fun isWallpaperEffectEnabled() = false
+
     open fun isWallpaperEffectModelDownloadEnabled() = true
+
     open fun isInterruptModelDownloadEnabled() = false
+
     open fun isWallpaperRestorerEnabled() = wallpaperRestorerFlag()
+
     open fun isWallpaperCategoryRefactoringEnabled() = refactorWallpaperCategoryFlag()
+
     open fun isColorContrastControlEnabled() = enableColorContrastControl()
+
+    open fun isLargeScreenWallpaperCollectionsEnabled() = largeScreenWallpaperCollections()
+
     open fun isMagicPortraitEnabled() = magicPortraitFlag()
-    open fun isNewPickerUi() = newPickerUiFlag()
+
+    open fun isNewPickerUi() = newCustomizationPickerUi()
+
     open fun isClockReactiveVariantsEnabled() = clockReactiveVariants()
 
     open fun isMultiCropEnabled() = WallpaperManager.isMultiCropEnabled()
@@ -74,12 +87,6 @@ abstract class BaseFlags {
             .firstOrNull { flag ->
                 flag.name == Contract.FlagsTable.FLAG_NAME_WALLPAPER_PICKER_UI_FOR_AIWP
             }
-            ?.value == true
-    }
-
-    open fun isTransitClockEnabled(context: Context): Boolean {
-        return getCachedFlags(context)
-            .firstOrNull { flag -> flag.name == Contract.FlagsTable.FLAG_NAME_TRANSIT_CLOCK }
             ?.value == true
     }
 

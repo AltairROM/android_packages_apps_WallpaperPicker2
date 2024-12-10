@@ -21,7 +21,6 @@
     android:layout_height="wrap_content"
     android:focusable="false"
     android:orientation="vertical"
-    android:layout_marginTop="10dp"
     android:importantForAccessibility="yes">
 
     <TextView
@@ -37,7 +36,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/category"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:importantForAccessibility="no"
         android:foreground="?attr/selectableItemBackground"
         app:cardCornerRadius="?android:dialogCornerRadius"
@@ -60,5 +59,6 @@
         android:gravity="center"
         android:maxLines="1"
         android:minHeight="@dimen/grid_item_category_label_minimum_height"
+        android:textColor="@color/system_on_surface"
         tools:text="Wallpaper category" />
 </LinearLayout>

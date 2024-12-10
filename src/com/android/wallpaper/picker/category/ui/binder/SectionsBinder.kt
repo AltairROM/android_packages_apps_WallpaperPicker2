@@ -36,7 +36,6 @@ object SectionsBinder {
         lifecycleOwner: LifecycleOwner,
     ) {
         sectionsListView.adapter = CategorySectionsAdapter(sectionsViewModel, windowWidth)
-
         val gridLayoutManager =
             GridLayoutManager(sectionsListView.context, DEFAULT_SPAN).apply {
                 spanSizeLookup =
@@ -47,7 +46,7 @@ object SectionsBinder {
                     }
             }
         sectionsListView.layoutManager = gridLayoutManager
-
+        sectionsListView.removeItemDecorations()
         sectionsListView.addItemDecoration(
             CategoriesGridPaddingDecoration(
                 sectionsListView.context.resources.getDimensionPixelSize(
@@ -57,5 +56,11 @@ object SectionsBinder {
                 return@CategoriesGridPaddingDecoration sectionsViewModel[position].columnCount
             }
         )
+    }
+
+    fun RecyclerView.removeItemDecorations() {
+        while (itemDecorationCount > 0) {
+            removeItemDecorationAt(0)
+        }
     }
 }

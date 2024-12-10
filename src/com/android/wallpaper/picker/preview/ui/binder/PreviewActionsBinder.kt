@@ -21,12 +21,15 @@ import android.net.Uri
 import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.view.isInvisible
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.android.wallpaper.R
+import com.android.wallpaper.config.BaseFlags
 import com.android.wallpaper.model.wallpaper.DeviceDisplayType
 import com.android.wallpaper.module.logging.UserEventLogger
 import com.android.wallpaper.picker.preview.ui.util.ImageEffectDialogUtil
@@ -53,6 +56,7 @@ object PreviewActionsBinder {
     fun bind(
         actionGroup: PreviewActionGroup,
         floatingSheet: PreviewActionFloatingSheet,
+        motionLayout: MotionLayout? = null,
         previewViewModel: WallpaperPreviewViewModel,
         actionsViewModel: PreviewActionsViewModel,
         deviceDisplayType: DeviceDisplayType,
@@ -72,13 +76,31 @@ object PreviewActionsBinder {
         val floatingSheetCallback =
             object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(view: View, newState: Int) {
+                    // We set visibility to invisible, instead of gone because we listen to the
+                    // state change of the BottomSheet and the state change callbacks are only fired
+                    // when the view is not gone.
                     if (newState == STATE_HIDDEN) {
                         actionsViewModel.onFloatingSheetCollapsed()
+                        if (BaseFlags.get().isNewPickerUi()) motionLayout?.transitionToStart()
+                        else floatingSheet.isInvisible = true
+                    } else {
+                        if (BaseFlags.get().isNewPickerUi()) motionLayout?.transitionToEnd()
+                        else floatingSheet.isInvisible = false
                     }
                 }
 
                 override fun onSlide(p0: View, p1: Float) {}
             }
+        val noActionChecked = !actionsViewModel.isAnyActionChecked()
+        if (BaseFlags.get().isNewPickerUi()) {
+            if (noActionChecked) {
+                motionLayout?.transitionToStart()
+            } else {
+                motionLayout?.transitionToEnd()
+            }
+        } else {
+            floatingSheet.isInvisible = noActionChecked
+        }
         floatingSheet.addFloatingSheetCallback(floatingSheetCallback)
         lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
@@ -124,11 +146,7 @@ object PreviewActionsBinder {
                         actionGroup.setClickListener(
                             DOWNLOAD,
                             if (it) {
-                                {
-                                    lifecycleOwner.lifecycleScope.launch {
-                                        actionsViewModel.downloadWallpaper()
-                                    }
-                                }
+                                { actionsViewModel.downloadWallpaper() }
                             } else null,
                         )
                     }
@@ -162,7 +180,7 @@ object PreviewActionsBinder {
                                     appContext.contentResolver.delete(
                                         viewModel.creativeWallpaperDeleteUri,
                                         null,
-                                        null
+                                        null,
                                     )
                                 } else if (viewModel.liveWallpaperDeleteIntent != null) {
                                     appContext.startService(viewModel.liveWallpaperDeleteIntent)
@@ -209,7 +227,7 @@ object PreviewActionsBinder {
                                     )
                                     onNavigateToEditScreen.invoke(it)
                                 }
-                            } else null
+                            } else null,
                         )
                     }
                 }
@@ -307,7 +325,7 @@ object PreviewActionsBinder {
                                 object : OnBackPressedCallback(true) {
                                         override fun handleOnBackPressed() {
                                             val handled = handleOnBackPressed()
-                                            if(!handled) {
+                                            if (!handled) {
                                                 onBackPressedCallback?.remove()
                                                 onBackPressedCallback = null
                                                 activity.onBackPressedDispatcher.onBackPressed()
@@ -331,7 +349,7 @@ object PreviewActionsBinder {
                             SHARE,
                             if (it != null) {
                                 { onStartShareActivity.invoke(it) }
-                            } else null
+                            } else null,
                         )
                     }
                 }
@@ -351,7 +369,7 @@ object PreviewActionsBinder {
                                 informationViewModel != null -> {
                                     floatingSheet.setInformationContent(
                                         informationViewModel.attributions,
-                                        informationViewModel.exploreActionUrl?.let { url ->
+                                        informationViewModel.actionUrl?.let { url ->
                                             {
                                                 logger.logWallpaperExploreButtonClicked()
                                                 floatingSheet.context.startActivity(
@@ -359,6 +377,7 @@ object PreviewActionsBinder {
                                                 )
                                             }
                                         },
+                                        informationViewModel.actionButtonTitle,
                                     )
                                 }
                                 imageEffectViewModel != null ->

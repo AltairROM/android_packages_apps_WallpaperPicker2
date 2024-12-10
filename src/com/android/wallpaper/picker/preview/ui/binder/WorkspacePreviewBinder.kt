@@ -27,7 +27,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.android.wallpaper.picker.customization.shared.model.WallpaperColorsModel
-import com.android.wallpaper.picker.preview.ui.util.SurfaceViewUtil
 import com.android.wallpaper.picker.preview.ui.viewmodel.WallpaperPreviewViewModel
 import com.android.wallpaper.picker.preview.ui.viewmodel.WorkspacePreviewConfigViewModel
 import com.android.wallpaper.util.PreviewUtils
@@ -46,7 +45,7 @@ object WorkspacePreviewBinder {
         viewModel: WallpaperPreviewViewModel,
         lifecycleOwner: LifecycleOwner,
     ) {
-        var surfaceCallback: SurfaceViewUtil.SurfaceCallback? = null
+        var surfaceCallback: SurfaceViewUtils.SurfaceCallback? = null
         lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
                 surfaceCallback =
@@ -77,8 +76,8 @@ object WorkspacePreviewBinder {
         viewModel: WallpaperPreviewViewModel,
         config: WorkspacePreviewConfigViewModel,
         lifecycleOwner: LifecycleOwner,
-    ): SurfaceViewUtil.SurfaceCallback {
-        return object : SurfaceViewUtil.SurfaceCallback {
+    ): SurfaceViewUtils.SurfaceCallback {
+        return object : SurfaceViewUtils.SurfaceCallback {
 
             var job: Job? = null
             var previewDisposableHandle: DisposableHandle? = null
@@ -94,7 +93,7 @@ object WorkspacePreviewBinder {
                                         previewUtils = config.previewUtils,
                                         displayId =
                                             viewModel.getDisplayId(config.deviceDisplayType),
-                                        wallpaperColors = it.colors
+                                        wallpaperColors = it.colors,
                                     )
                                 // Dispose the previous preview on the renderer side.
                                 previewDisposableHandle?.dispose()
@@ -124,7 +123,7 @@ object WorkspacePreviewBinder {
         viewModel: WallpaperPreviewViewModel,
         lifecycleOwner: LifecycleOwner,
     ) {
-        var surfaceCallback: SurfaceViewUtil.SurfaceCallback? = null
+        var surfaceCallback: SurfaceViewUtils.SurfaceCallback? = null
         lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
                 surfaceCallback =
@@ -153,8 +152,8 @@ object WorkspacePreviewBinder {
         surface: SurfaceView,
         viewModel: WallpaperPreviewViewModel,
         lifecycleOwner: LifecycleOwner,
-    ): SurfaceViewUtil.SurfaceCallback {
-        return object : SurfaceViewUtil.SurfaceCallback {
+    ): SurfaceViewUtils.SurfaceCallback {
+        return object : SurfaceViewUtils.SurfaceCallback {
 
             var job: Job? = null
             var previewDisposableHandle: DisposableHandle? = null
@@ -164,7 +163,7 @@ object WorkspacePreviewBinder {
                     lifecycleOwner.lifecycleScope.launch {
                         combine(
                                 viewModel.fullWorkspacePreviewConfigViewModel,
-                                viewModel.wallpaperColorsModel
+                                viewModel.wallpaperColorsModel,
                             ) { config, colorsModel ->
                                 config to colorsModel
                             }
@@ -176,7 +175,7 @@ object WorkspacePreviewBinder {
                                             previewUtils = config.previewUtils,
                                             displayId =
                                                 viewModel.getDisplayId(config.deviceDisplayType),
-                                            wallpaperColors = colorsModel.colors
+                                            wallpaperColors = colorsModel.colors,
                                         )
                                     // Dispose the previous preview on the renderer side.
                                     previewDisposableHandle?.dispose()
@@ -205,15 +204,21 @@ object WorkspacePreviewBinder {
     ): Message? {
         var workspaceCallback: Message? = null
         if (previewUtils.supportsPreview()) {
-            val extras = bundleOf(Pair(SurfaceViewUtils.KEY_DISPLAY_ID, displayId))
+            // surfaceView.width and surfaceFrame.width here can be different, one represents the
+            // size of the view and the other represents the size of the surface. When requesting a
+            // preview, make sure to specify the width and height in the bundle so we are using the
+            // surface size and not the view size.
+            val surfacePosition = surface.holder.surfaceFrame
+            val extras =
+                bundleOf(
+                    Pair(SurfaceViewUtils.KEY_DISPLAY_ID, displayId),
+                    Pair(SurfaceViewUtils.KEY_VIEW_WIDTH, surfacePosition.width()),
+                    Pair(SurfaceViewUtils.KEY_VIEW_HEIGHT, surfacePosition.height()),
+                )
             wallpaperColors?.let {
                 extras.putParcelable(SurfaceViewUtils.KEY_WALLPAPER_COLORS, wallpaperColors)
             }
-            val request =
-                SurfaceViewUtils.createSurfaceViewRequest(
-                    surface,
-                    extras,
-                )
+            val request = SurfaceViewUtils.createSurfaceViewRequest(surface, extras)
             workspaceCallback = suspendCancellableCoroutine { continuation ->
                 previewUtils.renderPreview(
                     request,
@@ -227,7 +232,7 @@ object WorkspacePreviewBinder {
                                         Log.w(
                                             TAG,
                                             "Result bundle from rendering preview does not contain " +
-                                                "a child surface package."
+                                                "a child surface package.",
                                         )
                                     }
                                 }
@@ -237,7 +242,7 @@ object WorkspacePreviewBinder {
                                 continuation.resume(null)
                             }
                         }
-                    }
+                    },
                 )
             }
         }
